@@ -247,7 +247,6 @@ StableHorde.payload =
     trusted_workers = false,
     workers = nil,
   }
-  
 StableHorde.apiKey = '0000000000'
 
 StableHorde.shortGetUrl = "https://stablehorde.net/api/v2/generate/check/"
@@ -371,8 +370,9 @@ function StableHorde:createImage(imageData, n)
 end
 
 function StableHorde:generateImages(cons)
+  cons = cons or {}
   self:setFinishedAction(cons.finishedAction or self.finishedAction)
-  self.apiKey = self.apiKey or cons.apiKey
+  self.apiKey = cons.apiKey or self.apiKey
   self.payload = updateTableKeys(self.payload, cons)
   self.payload.params = updateTableKeys(self.payload.params, cons)
   self:clearHandlers()
@@ -389,14 +389,15 @@ end
 
 function StableHorde:new(cons)
   local me = {}
+  me.payload = table.deepcopy(self.payload)
   cons = cons or {}
   setmetatable(me, self)
-  me.name = cons.name or string.format("anonymous_SD_instance_%d", table.size(StableHorde.Instances[me.name]))
+  me.name = cons.name or string.format("anonymous_SD_instance_%d", table.size(StableHorde.Instances) + 1)
   if StableHorde.Instances[me.name] then
     me = StableHorde.Instances[me.name]
   end
-  me:generateImages(cons)
   StableHorde.Instances[me.name] = me
+  me:generateImages(cons)
   return me
 end</script>
 			<eventHandlerList />
