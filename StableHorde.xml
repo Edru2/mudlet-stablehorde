@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE MudletPackage>
 <MudletPackage version="1.001">
-	<TriggerPackage />
-	<TimerPackage />
-	<AliasPackage />
-	<ActionPackage />
 	<ScriptPackage>
-		<Script isActive="yes" isFolder="no">
-			<name>base64</name>
-			<packageName></packageName>
-			<script>--[[
+		<ScriptGroup isActive="yes" isFolder="yes">
+			<name>StableHorde</name>
+			<packageName>StableHorde</packageName>
+			<script></script>
+			<eventHandlerList />
+			<Script isActive="yes" isFolder="no">
+				<name>base64</name>
+				<packageName></packageName>
+				<script>--[[
 
  base64 -- v1.5.3 public domain Lua base64 encoder/decoder
  no warranty implied; use at your own risk
@@ -211,18 +212,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ------------------------------------------------------------------------------
 --]]
 </script>
-			<eventHandlerList />
-		</Script>
-		<Script isActive="yes" isFolder="no">
-			<name>StableHorde</name>
-			<packageName></packageName>
-			<script>StableHorde = StableHorde or {}
+				<eventHandlerList />
+			</Script>
+			<Script isActive="yes" isFolder="no">
+				<name>StableHorde</name>
+				<packageName></packageName>
+				<script>StableHorde = StableHorde or {}
 StableHorde.Instances = StableHorde.Instances or {}
 StableHorde.__index = StableHorde
 StableHorde.payload =
   {
     censor_nsfw = false,
-    models = nil,
+    models = "",
     nsfw = true,
     params =
       {
@@ -234,37 +235,53 @@ StableHorde.payload =
         n = 1,
         post_processing = {"GFPGAN"},
         sampler_name = "k_lms",
-        seed = nil,
+        seed = "",
         seed_variation = 1,
         steps = 30,
         toggles = {1, 4},
       },
     prompt = "Mudlet, intricate, overdetailed, trending on arstation, darek zabrocki, bob ross",
     r2 = false,
-    source_image = nil,
-    source_mask = nil,
-    source_processing = nil,
+    source_image = "",
+    source_mask = "",
+    source_processing = "",
     trusted_workers = false,
-    workers = nil,
+    workers = "",
   }
-  
 StableHorde.apiKey = '0000000000'
 
 StableHorde.shortGetUrl = "https://stablehorde.net/api/v2/generate/check/"
 StableHorde.fullGetUrl = "https://stablehorde.net/api/v2/generate/status/"
 StableHorde.postUrl = "https://stablehorde.net/api/v2/generate/async"
 
+StableHorde.debugFunction = StableHorde.debugFunction or function() end
+StableHorde.finishedAction = StableHorde.finishedAction or function() end
+
 local function updateTableKeys (tbl1, tbl2)
-  for k,v in pairs(tbl1) do
-    tbl1[k] = tbl2[k] or tbl1[k]
+  for k,v in pairs(tbl2) do
+    if tbl1[k] then
+       tbl1[k] = v
+    end
   end
   return tbl1
 end
 
+local function returnCleanTable(tbl)
+  local newTable = {}
+  for k,v in pairs(tbl) do
+    if not(v == "" or type(v) == "table") then
+      newTable[k] = v
+    end
+    if type(v) == "table" then
+      newTable[k] = returnCleanTable(v)
+    end
+  end
+  return newTable
+end
 
 function StableHorde:handleShortGet(body)
   local header = {["Content-Type"] = "application/json"}
-  display(body)
+  self.debugFunction(body)
   local body = yajl.to_value(body)
   if body.done then
     killTimer(self.getImageTimer)
@@ -371,14 +388,16 @@ function StableHorde:createImage(imageData, n)
 end
 
 function StableHorde:generateImages(cons)
-  self:setFinishedAction(cons.finishedAction or self.finishedAction)
-  self.apiKey = self.apiKey or cons.apiKey
+  cons = cons or {}
+  self.apiKey = cons.apiKey or self.apiKey
+  self = updateTableKeys(self, cons)
   self.payload = updateTableKeys(self.payload, cons)
   self.payload.params = updateTableKeys(self.payload.params, cons)
   self:clearHandlers()
   self:registerHandlers()
+  local cleanPayload = returnCleanTable(self.payload)
   local header = {["Content-Type"] = "application/json", apikey = self.apiKey}
-  postHTTP(yajl.to_string(self.payload), self.postUrl, header)
+  postHTTP(yajl.to_string(cleanPayload), self.postUrl, header)
 end
 
 function StableHorde:setFinishedAction(finishedFunction)
@@ -389,21 +408,19 @@ end
 
 function StableHorde:new(cons)
   local me = {}
+  me.payload = table.deepcopy(self.payload)
   cons = cons or {}
   setmetatable(me, self)
-  me.name = cons.name or string.format("anonymous_SD_instance_%d", table.size(StableHorde.Instances[me.name]))
+  me.name = cons.name or string.format("anonymous_SD_instance_%d", table.size(StableHorde.Instances) + 1)
   if StableHorde.Instances[me.name] then
     me = StableHorde.Instances[me.name]
   end
-  me:generateImages(cons)
   StableHorde.Instances[me.name] = me
+  me:generateImages(cons)
   return me
 end</script>
-			<eventHandlerList />
-		</Script>
+				<eventHandlerList />
+			</Script>
+		</ScriptGroup>
 	</ScriptPackage>
-	<KeyPackage />
-	<VariablePackage>
-		<HiddenVariables />
-	</VariablePackage>
 </MudletPackage>
