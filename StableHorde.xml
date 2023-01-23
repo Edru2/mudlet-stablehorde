@@ -389,8 +389,8 @@ end
 
 function StableHorde:generateImages(cons)
   cons = cons or {}
+  self:setFinishedAction(cons.finishedAction or self.finishedAction)
   self.apiKey = cons.apiKey or self.apiKey
-  self = updateTableKeys(self, cons)
   self.payload = updateTableKeys(self.payload, cons)
   self.payload.params = updateTableKeys(self.payload.params, cons)
   self:clearHandlers()
